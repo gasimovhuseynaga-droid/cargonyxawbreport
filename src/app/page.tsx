@@ -22,7 +22,6 @@ type Waybill = {
   weightKg: number
   createdAt: string
   createdBy: string
-  createdByPhone: string
   createdByUserId: string
   notes: string
 }
@@ -551,7 +550,6 @@ export default function Home() {
       notes: waybillForm.notes,
       createdAt: new Date(`${waybillForm.enteredDate}T12:00:00`).toISOString(),
       createdBy: `${currentUser.firstName} ${currentUser.lastName}`,
-      createdByPhone: currentUser.phone,
       createdByUserId: currentUser.id,
     }
 
