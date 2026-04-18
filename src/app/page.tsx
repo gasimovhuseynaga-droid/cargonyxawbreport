@@ -911,7 +911,10 @@ export default function Home() {
             }}
           >
             <div style={cardStyle}>
-              <h2 style={{ marginTop: 0 }}>{t.addWaybill}</h2>
+              <h2 style={{ marginTop: 0 }}>
+                {editingWaybillId ? 'Редактировать накладную' : t.addWaybill}
+              </h2>
+
               <div style={{ display: 'grid', gap: 12 }}>
                 <input
                   style={inputStyle}
@@ -976,9 +979,24 @@ export default function Home() {
                   onChange={(e) => setWaybillForm({ ...waybillForm, notes: e.target.value })}
                 />
 
-                <button onClick={handleAddWaybill} style={buttonStyle}>
-                  {t.saveWaybill}
-                </button>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <button onClick={handleAddWaybill} style={buttonStyle}>
+                    {editingWaybillId ? 'Сохранить изменения' : t.saveWaybill}
+                  </button>
+
+                  {editingWaybillId ? (
+                    <button
+                      onClick={handleCancelEdit}
+                      style={{
+                        ...buttonStyle,
+                        background: '#e5e7eb',
+                        color: '#111827',
+                      }}
+                    >
+                      Отмена
+                    </button>
+                  ) : null}
+                </div>
               </div>
             </div>
 
