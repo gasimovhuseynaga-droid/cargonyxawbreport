@@ -313,6 +313,10 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [isMobile, setIsMobile] = useState(false)
 
+
+
+  const [editingWaybillId, setEditingWaybillId] = useState<string | null>(null)
+
   useEffect(() => {
     function handleResize() {
       setIsMobile(window.innerWidth <= 768)
@@ -534,6 +538,37 @@ export default function Home() {
       return
     }
 
+    if (editingWaybillId) {
+      setWaybills((prev) =>
+        prev.map((item) =>
+          item.id === editingWaybillId
+            ? {
+              ...item,
+              number: waybillForm.number,
+              courier: waybillForm.courier,
+              boxesCount: Number(waybillForm.boxesCount),
+              weightKg: Number(waybillForm.weightKg),
+              notes: waybillForm.notes,
+              createdAt: new Date(`${waybillForm.enteredDate}T12:00:00`).toISOString(),
+            }
+            : item
+        )
+      )
+
+      setEditingWaybillId(null)
+
+      setWaybillForm({
+        number: '',
+        courier: 'STAREX',
+        boxesCount: '',
+        weightKg: '',
+        enteredDate: getTodayDate(),
+        notes: '',
+      })
+
+      return
+    }
+
     const newWaybill: Waybill = {
       id: crypto.randomUUID(),
       number: waybillForm.number,
@@ -558,6 +593,41 @@ export default function Home() {
     })
   }
 
+  function handleEditWaybill(item: Waybill) {
+    if (!currentUser) return
+
+    if (!isWaybillOwnedByCurrentUser(item, currentUser)) {
+      alert(t.onlyOwnerDelete)
+      return
+    }
+
+    setEditingWaybillId(item.id)
+
+    setWaybillForm({
+      number: item.number,
+      courier: item.courier,
+      boxesCount: String(item.boxesCount),
+      weightKg: String(item.weightKg),
+      enteredDate: getDateOnly(item.createdAt),
+      notes: item.notes || '',
+    })
+
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function handleCancelEdit() {
+
+    setEditingWaybillId(null)
+
+    setWaybillForm({
+      number: '',
+      courier: 'STAREX',
+      boxesCount: '',
+      weightKg: '',
+      enteredDate: getTodayDate(),
+      notes: '',
+    })
+  }
   function handleDeleteWaybill(id: string) {
     if (!currentUser) return
 
@@ -1007,12 +1077,39 @@ export default function Home() {
                           </div>
 
                           {isWaybillOwnedByCurrentUser(item, currentUser) ? (
-                            <button
-                              style={dangerButton}
-                              onClick={() => handleDeleteWaybill(item.id)}
-                            >
-                              {t.delete}
-                            </button>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <button
+                                onClick={() => handleEditWaybill(item)}
+                                title="Редактировать"
+                                style={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: 10,
+                                  border: '1px solid #93c5fd',
+                                  background: '#ffffff',
+                                  cursor: 'pointer',
+                                  fontSize: 18,
+                                }}
+                              >
+                                ✏️
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteWaybill(item.id)}
+                                title="Удалить"
+                                style={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: 10,
+                                  border: '1px solid #fca5a5',
+                                  background: '#ffffff',
+                                  cursor: 'pointer',
+                                  fontSize: 18,
+                                }}
+                              >
+                                🗑️
+                              </button>
+                            </div>
                           ) : null}
                         </div>
                       </div>
