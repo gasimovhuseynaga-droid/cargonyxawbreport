@@ -10,7 +10,6 @@ type User = {
   firstName: string
   lastName: string
   username: string
-  phone: string
   password: string
   createdAt: string
 }
@@ -320,14 +319,47 @@ export default function Home() {
   const [users, setUsers] = useState<User[]>([])
   const [waybills, setWaybills] = useState<Waybill[]>([])
   const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    function handleResize() {
+      setIsMobile(window.innerWidth <= 768)
+    }
+
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+
+
+  useEffect(() => {
+    const savedUsers = localStorage.getItem('users')
+    const savedCurrentUser = localStorage.getItem('currentUser')
+
+    if (savedUsers) setUsers(JSON.parse(savedUsers))
+    if (savedCurrentUser) setCurrentUser(JSON.parse(savedCurrentUser))
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('users', JSON.stringify(users))
+  }, [users])
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('currentUser', JSON.stringify(currentUser))
+    } else {
+      localStorage.removeItem('currentUser')
+    }
+  }, [currentUser])
 
   const [registerForm, setRegisterForm] = useState({
     firstName: '',
     lastName: '',
-    phone: '',
     password: '',
   })
-
   const [loginForm, setLoginForm] = useState({
     username: '',
     password: '',
@@ -441,25 +473,14 @@ export default function Home() {
   }, [monthlyChartData])
 
   function handleRegister() {
-    const phone = normalizeAzPhone(registerForm.phone)
-
-    if (!registerForm.firstName || !registerForm.lastName || !phone || !registerForm.password) {
+    if (!registerForm.firstName || !registerForm.lastName || !registerForm.password) {
       alert(t.fillAll)
-      return
-    }
-
-    if (!phone.startsWith('+994') && !phone.startsWith('994')) {
-      alert(t.needAzPhone)
       return
     }
 
     const username = slugifyUsername(registerForm.firstName, registerForm.lastName)
 
-    const exists = users.find(
-      (u) =>
-        normalizeAzPhone(u.phone) === phone ||
-        u.username === username
-    )
+    const exists = users.find((u) => u.username === username)
 
     if (exists) {
       alert(t.userExists)
@@ -471,7 +492,6 @@ export default function Home() {
       firstName: registerForm.firstName.trim(),
       lastName: registerForm.lastName.trim(),
       username,
-      phone,
       password: registerForm.password,
       createdAt: new Date().toISOString(),
     }
@@ -482,11 +502,9 @@ export default function Home() {
     setRegisterForm({
       firstName: '',
       lastName: '',
-      phone: '',
       password: '',
     })
   }
-
   function handleLogin() {
     const username = loginForm.username.trim().toLowerCase()
 
@@ -618,7 +636,7 @@ export default function Home() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '1.2fr 460px',
+              gridTemplateColumns: isMobile ? '1fr' : '1.2fr 460px',
               gap: 24,
               alignItems: 'stretch',
             }}
@@ -695,12 +713,7 @@ export default function Home() {
                         setRegisterForm({ ...registerForm, lastName: e.target.value })
                       }
                     />
-                    <input
-                      style={inputStyle}
-                      placeholder="+994-55-990-18-09"
-                      value={registerForm.phone}
-                      onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })}
-                    />
+
                     <input
                       style={inputStyle}
                       placeholder={t.createPassword}
@@ -802,7 +815,7 @@ export default function Home() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, minmax(0, 1fr))',
             gap: 16,
             marginBottom: 24,
           }}
@@ -832,7 +845,7 @@ export default function Home() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '420px 1fr',
+            gridTemplateColumns: isMobile ? '1fr' : '420px 1fr',
             gap: 24,
             alignItems: 'start',
           }}
