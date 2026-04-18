@@ -287,28 +287,21 @@ function isWaybillOwnedByCurrentUser(
   waybill: {
     createdByUserId?: string
     createdBy: string
-    createdByPhone: string
   },
   currentUser: {
     id: string
     firstName: string
     lastName: string
-    phone: string
   } | null
 ) {
   if (!currentUser) return false
 
-  if (waybill.createdByUserId && waybill.createdByUserId === currentUser.id) {
-    return true
-  }
+  if (waybill.createdByUserId === currentUser.id) return true
 
-  const currentFullName = `${currentUser.firstName} ${currentUser.lastName}`.trim().toLowerCase()
-  const waybillFullName = (waybill.createdBy || '').trim().toLowerCase()
+  const fullName =
+    `${currentUser.firstName} ${currentUser.lastName}`.trim().toLowerCase()
 
-  return (
-    waybillFullName === currentFullName &&
-    normalizeAzPhone(waybill.createdByPhone || '') === normalizeAzPhone(currentUser.phone || '')
-  )
+  return (waybill.createdBy || '').trim().toLowerCase() === fullName
 }
 export default function Home() {
   const [language, setLanguage] = useState<Language>('ru')
@@ -772,190 +765,103 @@ export default function Home() {
           <div>
             <h1 style={{ margin: 0 }}>{t.reportTitle}</h1>
             <div style={{ color: '#334155', marginTop: 4 }}>
-              {currentUser.firstName} {currentUser.lastName} · {currentUser.phone}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ fontWeight: 800, fontSize: 22, color: '#1d4ed8' }}>
-              CARGONYX WHS
+              {currentUser.firstName} {currentUser.lastName}
             </div>
 
-            <select
-              style={{ ...inputStyle, width: 120, background: '#ffffff' }}
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as Language)}
-            >
-              <option value="az">AZ</option>
-              <option value="ru">RU</option>
-              <option value="en">EN</option>
-            </select>
-
-            <img
-              src="/cargonyx-logo.png"
-              alt="CargoNYX"
-              style={{
-                width: 140,
-                height: 'auto',
-                background: '#fff',
-                padding: 6,
-                borderRadius: 12,
-                border: '1px solid #bfdbfe',
-              }}
-            />
-
-            <button onClick={handleLogout} style={secondaryButton}>
-              {t.logout}
-            </button>
-          </div>
-        </div>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, minmax(0, 1fr))',
-            gap: 16,
-            marginBottom: 24,
-          }}
-        >
-          <div style={cardStyle}>
-            <div style={{ color: '#475569' }}>{t.allWaybills}</div>
-            <div style={{ fontSize: 30, fontWeight: 800, marginTop: 8 }}>{summary.totalWaybills}</div>
-          </div>
-          <div style={cardStyle}>
-            <div style={{ color: '#475569' }}>{t.allBoxes}</div>
-            <div style={{ fontSize: 30, fontWeight: 800, marginTop: 8 }}>{summary.totalBoxes}</div>
-          </div>
-          <div style={cardStyle}>
-            <div style={{ color: '#475569' }}>{t.todayBoxes}</div>
-            <div style={{ fontSize: 30, fontWeight: 800, marginTop: 8 }}>{dailySummary.boxes}</div>
-          </div>
-          <div style={cardStyle}>
-            <div style={{ color: '#475569' }}>{t.monthBoxes}</div>
-            <div style={{ fontSize: 30, fontWeight: 800, marginTop: 8 }}>{monthlySummary.boxes}</div>
-          </div>
-          <div style={cardStyle}>
-            <div style={{ color: '#475569' }}>{t.monthWeight}</div>
-            <div style={{ fontSize: 30, fontWeight: 800, marginTop: 8 }}>{monthlySummary.weight} кг</div>
-          </div>
-        </div>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '420px 1fr',
-            gap: 24,
-            alignItems: 'start',
-          }}
-        >
-          <div style={cardStyle}>
-            <h2 style={{ marginTop: 0 }}>{t.addWaybill}</h2>
-            <div style={{ display: 'grid', gap: 12 }}>
-              <input
-                style={inputStyle}
-                placeholder={t.awbPlaceholder}
-                value={waybillForm.number}
-                onChange={(e) =>
-                  setWaybillForm({
-                    ...waybillForm,
-                    number: formatAwbNumber(e.target.value),
-                  })
-                }
-              />
+            <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ fontWeight: 800, fontSize: 22, color: '#1d4ed8' }}>
+                CARGONYX WHS
+              </div>
 
               <select
-                style={inputStyle}
-                value={waybillForm.courier}
-                onChange={(e) =>
-                  setWaybillForm({ ...waybillForm, courier: e.target.value as CourierCode })
-                }
+                style={{ ...inputStyle, width: 120, background: '#ffffff' }}
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as Language)}
               >
-                {couriers.map((courier) => (
-                  <option key={courier} value={courier}>
-                    {courier}
-                  </option>
-                ))}
+                <option value="az">AZ</option>
+                <option value="ru">RU</option>
+                <option value="en">EN</option>
               </select>
 
-              <input
-                style={inputStyle}
-                placeholder={t.boxesCount}
-                type="number"
-                value={waybillForm.boxesCount}
-                onChange={(e) =>
-                  setWaybillForm({ ...waybillForm, boxesCount: e.target.value })
-                }
+              <img
+                src="/cargonyx-logo.png"
+                alt="CargoNYX"
+                style={{
+                  width: 140,
+                  height: 'auto',
+                  background: '#fff',
+                  padding: 6,
+                  borderRadius: 12,
+                  border: '1px solid #bfdbfe',
+                }}
               />
 
-              <input
-                style={inputStyle}
-                placeholder={t.weightKg}
-                type="number"
-                value={waybillForm.weightKg}
-                onChange={(e) =>
-                  setWaybillForm({ ...waybillForm, weightKg: e.target.value })
-                }
-              />
-
-              <input
-                className="dark-calendar-input"
-                style={inputStyle}
-                type="date"
-                value={waybillForm.enteredDate}
-                onChange={(e) =>
-                  setWaybillForm({ ...waybillForm, enteredDate: e.target.value })
-                }
-              />
-
-              <textarea
-                style={{ ...inputStyle, minHeight: 90, resize: 'vertical' }}
-                placeholder={t.comment}
-                value={waybillForm.notes}
-                onChange={(e) => setWaybillForm({ ...waybillForm, notes: e.target.value })}
-              />
-
-              <button onClick={handleAddWaybill} style={buttonStyle}>
-                {t.saveWaybill}
+              <button onClick={handleLogout} style={secondaryButton}>
+                {t.logout}
               </button>
             </div>
           </div>
 
-          <div style={cardStyle}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                gap: 12,
-                flexWrap: 'wrap',
-                marginBottom: 16,
-              }}
-            >
-              <h2 style={{ margin: 0 }}>{t.allWaybillsList}</h2>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, minmax(0, 1fr))',
+              gap: 16,
+              marginBottom: 24,
+            }}
+          >
+            <div style={cardStyle}>
+              <div style={{ color: '#475569' }}>{t.allWaybills}</div>
+              <div style={{ fontSize: 30, fontWeight: 800, marginTop: 8 }}>{summary.totalWaybills}</div>
+            </div>
+            <div style={cardStyle}>
+              <div style={{ color: '#475569' }}>{t.allBoxes}</div>
+              <div style={{ fontSize: 30, fontWeight: 800, marginTop: 8 }}>{summary.totalBoxes}</div>
+            </div>
+            <div style={cardStyle}>
+              <div style={{ color: '#475569' }}>{t.todayBoxes}</div>
+              <div style={{ fontSize: 30, fontWeight: 800, marginTop: 8 }}>{dailySummary.boxes}</div>
+            </div>
+            <div style={cardStyle}>
+              <div style={{ color: '#475569' }}>{t.monthBoxes}</div>
+              <div style={{ fontSize: 30, fontWeight: 800, marginTop: 8 }}>{monthlySummary.boxes}</div>
+            </div>
+            <div style={cardStyle}>
+              <div style={{ color: '#475569' }}>{t.monthWeight}</div>
+              <div style={{ fontSize: 30, fontWeight: 800, marginTop: 8 }}>{monthlySummary.weight} кг</div>
+            </div>
+          </div>
 
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : '420px 1fr',
+              gap: 24,
+              alignItems: 'start',
+            }}
+          >
+            <div style={cardStyle}>
+              <h2 style={{ marginTop: 0 }}>{t.addWaybill}</h2>
+              <div style={{ display: 'grid', gap: 12 }}>
                 <input
-                  style={{ ...inputStyle, width: 240 }}
-                  placeholder={t.searchAwb}
-                  value={searchNumber}
-                  onChange={(e) => setSearchNumber(formatAwbNumber(e.target.value))}
-                />
-
-                <input
-                  className="dark-calendar-input"
-                  style={{ ...inputStyle, width: 170 }}
-                  type="date"
-                  value={filterDate}
-                  onChange={(e) => setFilterDate(e.target.value)}
+                  style={inputStyle}
+                  placeholder={t.awbPlaceholder}
+                  value={waybillForm.number}
+                  onChange={(e) =>
+                    setWaybillForm({
+                      ...waybillForm,
+                      number: formatAwbNumber(e.target.value),
+                    })
+                  }
                 />
 
                 <select
-                  style={{ ...inputStyle, width: 160 }}
-                  value={filterCourier}
+                  style={inputStyle}
+                  value={waybillForm.courier}
                   onChange={(e) =>
-                    setFilterCourier(e.target.value as 'ALL' | CourierCode)
+                    setWaybillForm({ ...waybillForm, courier: e.target.value as CourierCode })
                   }
                 >
-                  <option value="ALL">{t.allCouriers}</option>
                   {couriers.map((courier) => (
                     <option key={courier} value={courier}>
                       {courier}
@@ -963,152 +869,239 @@ export default function Home() {
                   ))}
                 </select>
 
-                <button
-                  style={secondaryButton}
-                  onClick={() => {
-                    setSearchNumber('')
-                    setFilterDate('')
-                    setFilterCourier('ALL')
-                  }}
-                >
-                  {t.reset}
+                <input
+                  style={inputStyle}
+                  placeholder={t.boxesCount}
+                  type="number"
+                  value={waybillForm.boxesCount}
+                  onChange={(e) =>
+                    setWaybillForm({ ...waybillForm, boxesCount: e.target.value })
+                  }
+                />
+
+                <input
+                  style={inputStyle}
+                  placeholder={t.weightKg}
+                  type="number"
+                  value={waybillForm.weightKg}
+                  onChange={(e) =>
+                    setWaybillForm({ ...waybillForm, weightKg: e.target.value })
+                  }
+                />
+
+                <input
+                  className="dark-calendar-input"
+                  style={inputStyle}
+                  type="date"
+                  value={waybillForm.enteredDate}
+                  onChange={(e) =>
+                    setWaybillForm({ ...waybillForm, enteredDate: e.target.value })
+                  }
+                />
+
+                <textarea
+                  style={{ ...inputStyle, minHeight: 90, resize: 'vertical' }}
+                  placeholder={t.comment}
+                  value={waybillForm.notes}
+                  onChange={(e) => setWaybillForm({ ...waybillForm, notes: e.target.value })}
+                />
+
+                <button onClick={handleAddWaybill} style={buttonStyle}>
+                  {t.saveWaybill}
                 </button>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gap: 12 }}>
-              {filteredWaybills.length === 0 ? (
-                <div style={{ color: '#475569' }}>{t.noWaybills}</div>
-              ) : (
-                filteredWaybills.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      border: '1px solid #cbd5e1',
-                      borderRadius: 16,
-                      padding: 16,
-                      background: '#eff6ff',
+            <div style={cardStyle}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                  marginBottom: 16,
+                }}
+              >
+                <h2 style={{ margin: 0 }}>{t.allWaybillsList}</h2>
+
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <input
+                    style={{ ...inputStyle, width: 240 }}
+                    placeholder={t.searchAwb}
+                    value={searchNumber}
+                    onChange={(e) => setSearchNumber(formatAwbNumber(e.target.value))}
+                  />
+
+                  <input
+                    className="dark-calendar-input"
+                    style={{ ...inputStyle, width: 170 }}
+                    type="date"
+                    value={filterDate}
+                    onChange={(e) => setFilterDate(e.target.value)}
+                  />
+
+                  <select
+                    style={{ ...inputStyle, width: 160 }}
+                    value={filterCourier}
+                    onChange={(e) =>
+                      setFilterCourier(e.target.value as 'ALL' | CourierCode)
+                    }
+                  >
+                    <option value="ALL">{t.allCouriers}</option>
+                    {couriers.map((courier) => (
+                      <option key={courier} value={courier}>
+                        {courier}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    style={secondaryButton}
+                    onClick={() => {
+                      setSearchNumber('')
+                      setFilterDate('')
+                      setFilterCourier('ALL')
                     }}
                   >
+                    {t.reset}
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gap: 12 }}>
+                {filteredWaybills.length === 0 ? (
+                  <div style={{ color: '#475569' }}>{t.noWaybills}</div>
+                ) : (
+                  filteredWaybills.map((item) => (
                     <div
+                      key={item.id}
                       style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        gap: 12,
-                        flexWrap: 'wrap',
-                        alignItems: 'center',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: 16,
+                        padding: 16,
+                        background: '#eff6ff',
                       }}
                     >
-                      <div style={{ fontSize: 22, fontWeight: 800 }}>{item.number}</div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          gap: 12,
+                          flexWrap: 'wrap',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <div style={{ fontSize: 22, fontWeight: 800 }}>{item.number}</div>
 
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <div
-                          style={{
-                            background: '#dbeafe',
-                            color: '#1d4ed8',
-                            padding: '6px 10px',
-                            borderRadius: 999,
-                            fontWeight: 700,
-                          }}
-                        >
-                          {item.courier}
-                        </div>
-
-                        {isWaybillOwnedByCurrentUser(item, currentUser) ? (
-                          <button
-                            style={dangerButton}
-                            onClick={() => handleDeleteWaybill(item.id)}
+                        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <div
+                            style={{
+                              background: '#dbeafe',
+                              color: '#1d4ed8',
+                              padding: '6px 10px',
+                              borderRadius: 999,
+                              fontWeight: 700,
+                            }}
                           >
-                            {t.delete}
-                          </button>
-                        ) : null}
-                      </div>
-                    </div>
+                            {item.courier}
+                          </div>
 
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                        gap: 10,
-                        marginTop: 14,
-                        color: '#1e293b',
-                      }}
-                    >
-                      <div>{t.boxes}: <strong>{item.boxesCount}</strong></div>
-                      <div>{t.weight}: <strong>{item.weightKg} кг</strong></div>
-                      <div>{t.addedBy}: <strong>{item.createdBy}</strong></div>
-                      <div>{t.date}: <strong>{formatDate(item.createdAt)}</strong></div>
-                    </div>
-
-                    {item.notes ? (
-                      <div style={{ marginTop: 12, color: '#475569' }}>
-                        {t.commentLabel}: <strong>{item.notes}</strong>
+                          {isWaybillOwnedByCurrentUser(item, currentUser) ? (
+                            <button
+                              style={dangerButton}
+                              onClick={() => handleDeleteWaybill(item.id)}
+                            >
+                              {t.delete}
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
-                    ) : null}
-                  </div>
-                ))
-              )}
+
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                          gap: 10,
+                          marginTop: 14,
+                          color: '#1e293b',
+                        }}
+                      >
+                        <div>{t.boxes}: <strong>{item.boxesCount}</strong></div>
+                        <div>{t.weight}: <strong>{item.weightKg} кг</strong></div>
+                        <div>{t.addedBy}: <strong>{item.createdBy}</strong></div>
+                        <div>{t.date}: <strong>{formatDate(item.createdAt)}</strong></div>
+                      </div>
+
+                      {item.notes ? (
+                        <div style={{ marginTop: 12, color: '#475569' }}>
+                          {t.commentLabel}: <strong>{item.notes}</strong>
+                        </div>
+                      ) : null}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div style={{ ...cardStyle, marginTop: 24 }}>
-          <h2 style={{ marginTop: 0, marginBottom: 18 }}>{t.chartTitle}</h2>
+          <div style={{ ...cardStyle, marginTop: 24 }}>
+            <h2 style={{ marginTop: 0, marginBottom: 18 }}>{t.chartTitle}</h2>
 
-          {monthlyChartData.length === 0 ? (
-            <div style={{ color: '#475569' }}>{t.chartEmpty}</div>
-          ) : (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'end',
-                gap: 18,
-                minHeight: 280,
-                paddingTop: 20,
-                overflowX: 'auto',
-              }}
-            >
-              {monthlyChartData.map((item) => {
-                const height = Math.max(40, (item.boxes / maxChartValue) * 220)
+            {monthlyChartData.length === 0 ? (
+              <div style={{ color: '#475569' }}>{t.chartEmpty}</div>
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'end',
+                  gap: 18,
+                  minHeight: 280,
+                  paddingTop: 20,
+                  overflowX: 'auto',
+                }}
+              >
+                {monthlyChartData.map((item) => {
+                  const height = Math.max(40, (item.boxes / maxChartValue) * 220)
 
-                return (
-                  <div
-                    key={item.month}
-                    style={{
-                      minWidth: 110,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: 10,
-                    }}
-                  >
-                    <div style={{ fontWeight: 700, color: '#334155' }}>{item.boxes}</div>
-
+                  return (
                     <div
+                      key={item.month}
                       style={{
-                        width: 84,
-                        height,
-                        background: '#6ea9a7',
-                        borderRadius: '12px 12px 0 0',
-                        boxShadow: '0 6px 18px rgba(15,23,42,0.12)',
-                      }}
-                    />
-
-                    <div
-                      style={{
-                        textAlign: 'center',
-                        fontSize: 14,
-                        color: '#334155',
-                        lineHeight: 1.3,
+                        minWidth: 110,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 10,
                       }}
                     >
-                      {monthLabel(item.month, language)}
+                      <div style={{ fontWeight: 700, color: '#334155' }}>{item.boxes}</div>
+
+                      <div
+                        style={{
+                          width: 84,
+                          height,
+                          background: '#6ea9a7',
+                          borderRadius: '12px 12px 0 0',
+                          boxShadow: '0 6px 18px rgba(15,23,42,0.12)',
+                        }}
+                      />
+
+                      <div
+                        style={{
+                          textAlign: 'center',
+                          fontSize: 14,
+                          color: '#334155',
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {monthLabel(item.month, language)}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </main>
