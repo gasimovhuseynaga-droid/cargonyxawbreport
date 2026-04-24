@@ -526,18 +526,26 @@ export default function Home() {
       return
     }
 
-    const username = registerForm.lastName.trim().toLowerCase()
+    const username = `${registerForm.firstName.trim()} ${registerForm.lastName.trim()}`
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
 
-    const { error } = await supabase.auth.signUp({
-      email: `${registerForm.firstName.trim().toLowerCase()}.${registerForm.lastName.trim().toLowerCase()}@cargonyx.app`,
+    const { data: existingUser } = await supabase
+      .from('app_users')
+      .select('*')
+      .eq('username', username)
+      .maybeSingle()
+
+    if (existingUser) {
+      alert('Такой пользователь уже существует')
+      return
+    }
+
+    const { error } = await supabase.from('app_users').insert({
+      first_name: registerForm.firstName.trim(),
+      last_name: registerForm.lastName.trim(),
+      username,
       password: registerForm.password,
-      options: {
-        data: {
-          username,
-          first_name: registerForm.firstName.trim(),
-          last_name: registerForm.lastName.trim(),
-        },
-      },
     })
 
     if (error) {
@@ -555,14 +563,27 @@ export default function Home() {
       return
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: `${loginForm.username.trim().toLowerCase().replace(/\s+/g, '.')}@cargonyx.app`,
-      password: loginForm.password,
-    })
+    const username = loginForm.username.trim().toLowerCase()
+
+    const { data: user, error } = await supabase
+      .from('app_users')
+      .select('*')
+      .eq('username', username)
+      .eq('password', loginForm.password)
+      .maybeSingle()
 
     if (error) {
       alert(error.message)
+      return
     }
+
+    if (!user) {
+      alert('Неверный логин или пароль')
+      return
+    }
+
+    localStorage.setItem('warehouse_user', JSON.stringify(user))
+    setCurrentUser(user)
   }
 
   async function handleLogout() {
