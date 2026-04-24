@@ -1,19 +1,30 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-
+import { supabase } from '@/lib/supabase'
 type Language = 'ru' | 'az' | 'en'
 type CourierCode = 'UNITED' | 'LIMAK' | 'AZERPOCT' | 'DEMIR' | 'STAREX'
 
 type User = {
   id: string
+  email: string
+  username: string
   firstName: string
   lastName: string
-  username: string
-  password: string
   createdAt: string
 }
-
+type Profile = {
+  id: string
+  username: string | null
+  first_name: string
+  last_name: string
+  role: 'admin' | 'editor' | 'viewer'
+  can_create: boolean
+  can_edit: boolean
+  can_delete: boolean
+  can_manage_users: boolean
+  is_active: boolean
+}
 type Waybill = {
   id: string
   number: string
@@ -316,7 +327,48 @@ export default function Home() {
 
 
   const [editingWaybillId, setEditingWaybillId] = useState<string | null>(null)
+  const [authEmail, setAuthEmail] = useState('')
+  const [authPassword, setAuthPassword] = useState('')
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [loadingAuth, setLoadingAuth] = useState(true)
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([])
+  useEffect(() => {
+    async function bootstrapAuth() {
+      setLoadingAuth(true)
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (session?.user) {
+        await loadCurrentProfile(session.user.id)
+        await loadWaybillsFromDatabase()
+      }
+
+      setLoadingAuth(false)
+    }
+
+    bootstrapAuth()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        await loadCurrentProfile(session.user.id)
+        await loadWaybillsFromDatabase()
+      } else {
+        setCurrentUser(null)
+        setProfile(null)
+        setWaybills([])
+      }
+
+      setLoadingAuth(false)
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
   useEffect(() => {
     function handleResize() {
       setIsMobile(window.innerWidth <= 768)
@@ -468,61 +520,114 @@ export default function Home() {
     return Math.max(...monthlyChartData.map((item) => item.boxes))
   }, [monthlyChartData])
 
-  function handleRegister() {
+  async function handleRegisterWithSupabase() {
     if (!registerForm.firstName || !registerForm.lastName || !registerForm.password) {
-      alert(t.fillAll)
+      alert('Заполни все поля')
       return
     }
 
-    const username = slugifyUsername(registerForm.firstName, registerForm.lastName)
+    const username = registerForm.lastName.trim().toLowerCase()
 
-    const exists = users.find((u) => u.username === username)
-
-    if (exists) {
-      alert(t.userExists)
-      return
-    }
-
-    const newUser: User = {
-      id: crypto.randomUUID(),
-      firstName: registerForm.firstName.trim(),
-      lastName: registerForm.lastName.trim(),
-      username,
+    const { error } = await supabase.auth.signUp({
+      email: authEmail,
       password: registerForm.password,
-      createdAt: new Date().toISOString(),
-    }
-
-    setUsers([...users, newUser])
-    setCurrentUser(newUser)
-
-    setRegisterForm({
-      firstName: '',
-      lastName: '',
-      password: '',
+      options: {
+        data: {
+          username,
+          first_name: registerForm.firstName.trim(),
+          last_name: registerForm.lastName.trim(),
+        },
+      },
     })
-  }
-  function handleLogin() {
-    const username = loginForm.username.trim().toLowerCase()
 
-    const user = users.find(
-      (u) => u.username === username && u.password === loginForm.password
-    )
-
-    if (!user) {
-      alert(t.wrongLogin)
+    if (error) {
+      alert(error.message)
       return
     }
 
-    setCurrentUser(user)
-    setLoginForm({
-      username: '',
-      password: '',
-    })
+    alert('Регистрация успешна')
+    setMode('login')
   }
 
-  function handleLogout() {
-    setCurrentUser(null)
+  async function handleLoginWithSupabase() {
+    if (!authEmail || !authPassword) {
+      alert('Введи email и пароль')
+      return
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: authEmail,
+      password: authPassword,
+    })
+
+    if (error) {
+      alert(error.message)
+    }
   }
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    setCurrentUser(null)
+    setProfile(null)
+    setWaybills([])
+  }
+
+  async function loadCurrentProfile(userId: string) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single()
+
+    if (error) {
+      console.error('PROFILE LOAD ERROR', error)
+      return null
+    }
+
+    setProfile(data)
+
+    setCurrentUser({
+      id: data.id,
+      email: authEmail || '',
+      username: data.username || '',
+      firstName: data.first_name,
+      lastName: data.last_name,
+      createdAt: '',
+    })
+
+    return data
+  }
+
+  async function loadWaybillsFromDatabase() {
+    const { data, error } = await supabase
+      .from('waybills')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('WAYBILLS LOAD ERROR', error)
+      return
+    }
+
+    const mapped: Waybill[] = (data || []).map((row: any) => ({
+      id: row.id,
+      number: row.number,
+      courier: row.courier,
+      boxesCount: row.boxes_count,
+      weightKg: Number(row.weight_kg),
+      notes: row.notes || '',
+      createdAt: row.created_at,
+      createdBy: row.created_by_name,
+      createdByUserId: row.created_by,
+    }))
+
+    setWaybills(mapped)
+  }
+
+
+
+
+
 
   function handleAddWaybill() {
     if (!currentUser) return
@@ -784,7 +889,7 @@ export default function Home() {
                         setRegisterForm({ ...registerForm, password: e.target.value })
                       }
                     />
-                    <button onClick={handleRegister} style={buttonStyle}>
+                    <button onClick={handleRegisterWithSupabase} style={buttonStyle}>
                       {t.register}
                     </button>
                   </div>
@@ -806,7 +911,7 @@ export default function Home() {
                       value={loginForm.password}
                       onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                     />
-                    <button onClick={handleLogin} style={buttonStyle}>
+                    <button onClick={handleLoginWithSupabase} style={buttonStyle}>
                       {t.login}
                     </button>
                   </div>
