@@ -629,7 +629,7 @@ export default function Home() {
 
 
 
-  function handleAddWaybill() {
+  async function handleAddWaybill() {
     if (!currentUser) return
 
     if (
@@ -644,49 +644,41 @@ export default function Home() {
     }
 
     if (editingWaybillId) {
-      setWaybills((prev) =>
-        prev.map((item) =>
-          item.id === editingWaybillId
-            ? {
-              ...item,
-              number: waybillForm.number,
-              courier: waybillForm.courier,
-              boxesCount: Number(waybillForm.boxesCount),
-              weightKg: Number(waybillForm.weightKg),
-              notes: waybillForm.notes,
-              createdAt: new Date(`${waybillForm.enteredDate}T12:00:00`).toISOString(),
-            }
-            : item
-        )
-      )
+      const { error } = await supabase
+        .from('waybills')
+        .update({
+          number: waybillForm.number,
+          courier: waybillForm.courier,
+          boxes_count: Number(waybillForm.boxesCount),
+          weight_kg: Number(waybillForm.weightKg),
+          notes: waybillForm.notes,
+          entered_date: waybillForm.enteredDate,
+        })
+        .eq('id', editingWaybillId)
+
+      if (error) {
+        alert(error.message)
+        return
+      }
 
       setEditingWaybillId(null)
-
-      setWaybillForm({
-        number: '',
-        courier: 'STAREX',
-        boxesCount: '',
-        weightKg: '',
-        enteredDate: getTodayDate(),
-        notes: '',
+    } else {
+      const { error } = await supabase.from('waybills').insert({
+        number: waybillForm.number,
+        courier: waybillForm.courier,
+        boxes_count: Number(waybillForm.boxesCount),
+        weight_kg: Number(waybillForm.weightKg),
+        notes: waybillForm.notes,
+        entered_date: waybillForm.enteredDate,
+        created_by: currentUser.id,
+        created_by_name: `${currentUser.firstName} ${currentUser.lastName}`,
       })
 
-      return
+      if (error) {
+        alert(error.message)
+        return
+      }
     }
-
-    const newWaybill: Waybill = {
-      id: crypto.randomUUID(),
-      number: waybillForm.number,
-      courier: waybillForm.courier,
-      boxesCount: Number(waybillForm.boxesCount),
-      weightKg: Number(waybillForm.weightKg),
-      notes: waybillForm.notes,
-      createdAt: new Date(`${waybillForm.enteredDate}T12:00:00`).toISOString(),
-      createdBy: `${currentUser.firstName} ${currentUser.lastName}`,
-      createdByUserId: currentUser.id,
-    }
-
-    setWaybills([newWaybill, ...waybills])
 
     setWaybillForm({
       number: '',
@@ -696,7 +688,11 @@ export default function Home() {
       enteredDate: getTodayDate(),
       notes: '',
     })
+
+    await loadWaybillsFromDatabase()
   }
+
+
 
   function handleEditWaybill(item: Waybill) {
     if (!currentUser) return
