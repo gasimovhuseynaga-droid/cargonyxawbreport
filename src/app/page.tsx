@@ -529,7 +529,7 @@ export default function Home() {
     const username = registerForm.lastName.trim().toLowerCase()
 
     const { error } = await supabase.auth.signUp({
-      email: authEmail,
+      email: `${registerForm.firstName.trim().toLowerCase()}.${registerForm.lastName.trim().toLowerCase()}@cargonyx.local`,
       password: registerForm.password,
       options: {
         data: {
