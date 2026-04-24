@@ -529,7 +529,7 @@ export default function Home() {
     const username = registerForm.lastName.trim().toLowerCase()
 
     const { error } = await supabase.auth.signUp({
-      email: `${registerForm.firstName.trim().toLowerCase()}.${registerForm.lastName.trim().toLowerCase()}@cargonyx.local`,
+      email: `${registerForm.firstName.trim().toLowerCase()}.${registerForm.lastName.trim().toLowerCase()}@cargonyx.app`,
       password: registerForm.password,
       options: {
         data: {
@@ -556,7 +556,7 @@ export default function Home() {
     }
 
     const { error } = await supabase.auth.signInWithPassword({
-      email: `${loginForm.username.trim().toLowerCase().replace(/\s+/g, '.')}@cargonyx.local`,
+      email: `${loginForm.username.trim().toLowerCase().replace(/\s+/g, '.')}@cargonyx.app`,
       password: loginForm.password,
     })
 
