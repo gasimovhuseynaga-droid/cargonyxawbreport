@@ -556,8 +556,8 @@ export default function Home() {
     }
 
     const { error } = await supabase.auth.signInWithPassword({
-      email: authEmail,
-      password: authPassword,
+      email: `${loginForm.username.trim().toLowerCase().replace(/\s+/g, '.')}@cargonyx.local`,
+      password: loginForm.password,
     })
 
     if (error) {
