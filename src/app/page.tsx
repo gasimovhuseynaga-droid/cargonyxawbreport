@@ -550,8 +550,8 @@ export default function Home() {
   }
 
   async function handleLoginWithSupabase() {
-    if (!authEmail || !authPassword) {
-      alert('Введи email и пароль')
+    if (!loginForm.username || !loginForm.password) {
+      alert('Введи логин и пароль')
       return
     }
 
