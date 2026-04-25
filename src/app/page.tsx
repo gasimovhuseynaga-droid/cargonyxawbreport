@@ -584,10 +584,11 @@ export default function Home() {
 
     localStorage.setItem('warehouse_user', JSON.stringify(user))
     setCurrentUser(user)
+    await loadWaybillsFromDatabase()
   }
 
   async function handleLogout() {
-    await supabase.auth.signOut()
+    localStorage.removeItem('warehouse_user')
     setCurrentUser(null)
     setProfile(null)
     setWaybills([])
